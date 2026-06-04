@@ -1,6 +1,7 @@
 import json
 from typing import List
 
+from src.chunking.chunking_strategies import SimpleChunker
 from src.config import settings
 from src.llm.ollama import OllamaLLM
 from src.rag.pipeline import RAGPipeline
@@ -10,7 +11,7 @@ from src.vectorstore.milvus_store import MilvusStore
 def main() -> None:
     llm = OllamaLLM()
     # Candidate to Initialize chunker
-    chunker = None
+    chunker = SimpleChunker()
     vector_store = MilvusStore()
 
     pipeline = RAGPipeline(llm=llm, chunker=chunker, vector_store=vector_store)

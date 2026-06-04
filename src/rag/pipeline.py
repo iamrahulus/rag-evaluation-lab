@@ -24,6 +24,19 @@ class RAGPipeline:
 
         For testing purposes, we'll use a simple fixed text.
         """
+        chunks = []
+        embeddings = []
+        for doc in documents:
+            doc_chunks = self.chunker.chunk_text(doc)
+            for chunk in doc_chunks:
+                embedding = self.llm.get_embeddings(chunk)
+                chunks.append(chunk)
+                embeddings.append(embedding)
+            print(f"Processed document into {len(doc_chunks)} chunks.")
+
+        self.vector_store.insert_embeddings(embeddings=embeddings, texts=chunks)
+
+        """
         # Fixed text for testing
         fixed_texts = [
             "Equal Experts helped HMRC support the economy during COVID-19 by building new services in four weeks.",
@@ -37,6 +50,7 @@ class RAGPipeline:
         self.vector_store.insert_embeddings(
             embeddings=fixed_embeddings, texts=fixed_texts
         )
+        """
 
     def query(
         self,

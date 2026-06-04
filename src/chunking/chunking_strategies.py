@@ -15,12 +15,14 @@ class SimpleChunker(BaseChunker):
         self.chunk_size = chunk_size
         self.overlap = overlap
 
-    @abstractmethod
     def chunk_text(self, text: str) -> List[str]:
         """Simple chunking to be implemented."""
-        pass
-
-
+        chunks = []
+        for i in range(0, len(text), self.chunk_size - self.overlap):
+            chunk = text[i : i + self.chunk_size]
+            chunks.append(chunk)
+        return chunks
+        
 class AdvancedChunker(BaseChunker):
     @abstractmethod
     def chunk_text(self, text: str) -> List[str]:

@@ -1,0 +1,4 @@
+.venv/
+*.db
+*.db.lock
+__pycache__/

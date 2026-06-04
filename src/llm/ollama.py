@@ -17,7 +17,7 @@ class OllamaLLM(BaseLLM):
         self.model = model
         self.embedding_model = embedding_model
         self.base_url = base_url or settings.OLLAMA_BASE_URL
-        self.client = httpx.Client(base_url=self.base_url, timeout=60.0)
+        self.client = httpx.Client(base_url=self.base_url, timeout=300.0)
 
     def generate(
         self,
@@ -44,13 +44,13 @@ class OllamaLLM(BaseLLM):
 
     def get_embeddings(self, text: str) -> List[float]:
         """Get embeddings using Ollama API."""
-        payload = {"model": self.embedding_model, "prompt": text}
+        payload = {"model": self.embedding_model, "input": text}
 
-        response = self.client.post("/api/embeddings", json=payload)
+        response = self.client.post("/api/embed", json=payload)
         response.raise_for_status()
 
         result: Dict[str, List[float]] = response.json()
-        return result["embedding"]
+        return result["embeddings"][0]
 
     def close(self) -> None:
         self.client.close()

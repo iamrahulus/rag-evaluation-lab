@@ -8,7 +8,7 @@ class Settings(BaseSettings):
     COLLECTION_NAME: str = "documents"
 
     # LLM Models
-    LLM_MODEL: str = "llama3.2"
+    LLM_MODEL: str = "tinyllama"
 
     # Model Parameters
     DEFAULT_TEMPERATURE: float = 0.7
