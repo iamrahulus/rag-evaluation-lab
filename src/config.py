@@ -9,6 +9,7 @@ class Settings(BaseSettings):
 
     # LLM Models
     LLM_MODEL: str = "tinyllama"
+    LLM_JUDGE_MODEL: str = "llama3.2"  # stronger model for evaluation judgment
 
     # Model Parameters
     DEFAULT_TEMPERATURE: float = 0.7

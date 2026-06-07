@@ -52,26 +52,54 @@ class RAGPipeline:
         )
         """
 
+    def retrieve(self, question: str, top_k: int = settings.DEFAULT_TOP_K) -> str:
+        """Retrieve relevant context chunks for a question."""
+        question_embedding = self.llm.get_embeddings(question)
+        results = self.vector_store.retrieve(
+        query_embedding=question_embedding,
+        limit=top_k
+        )
+        return "\n\n".join(str(hit["text"]) for hit in results)
+
     def query(
         self,
         question: str,
         top_k: int = settings.DEFAULT_TOP_K,
         temperature: float = settings.DEFAULT_TEMPERATURE,
     ) -> str:
-        """Query the RAG pipeline with a question."""
+        """Query the RAG pipeline — retrieve context then generate answer."""
+        context = self.retrieve(question, top_k)
+        prompt = f"""Use the following context to answer the question. If you cannot answer based on the context, say "I cannot answer this question based on the available information."
+
+        Context:
+        {context}
+
+        Question: {question}
+
+        Answer:"""
+        return self.llm.generate(prompt=prompt, temperature=temperature)
+"""
+    def query(
+        self,
+        question: str,
+        top_k: int = settings.DEFAULT_TOP_K,
+        temperature: float = settings.DEFAULT_TEMPERATURE,
+    ) -> str:
+        \"""Query the RAG pipeline with a question.\"""
 
         question_embedding = self.llm.get_embeddings(question)
         results: List[Dict[str, float]] = self.vector_store.retrieve(
             query_embedding=question_embedding, limit=top_k
         )
         context = "\n\n".join(str(hit["text"]) for hit in results)
-        prompt = f"""Use the following context to answer the question. If you cannot answer this question based on the context, say "I cannot answer this question based on the available information."
+        prompt = f\"""Use the following context to answer the question. If you cannot answer this question based on the context, say "I cannot answer this question based on the available information."
 
 Context:
 {context}
 
 Question: {question}
 
-Answer:"""
+Answer:\"""
         answer = self.llm.generate(prompt=prompt, temperature=temperature)
         return answer
+"""
