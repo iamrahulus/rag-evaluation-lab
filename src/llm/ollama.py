@@ -49,7 +49,8 @@ class OllamaLLM(BaseLLM):
         response = self.client.post("/api/embed", json=payload)
         response.raise_for_status()
 
-        result: Dict[str, List[float]] = response.json()
+        result: Dict[str, List[List[float]]] = response.json()
+
         return result["embeddings"][0]
 
     def close(self) -> None:

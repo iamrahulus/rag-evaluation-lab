@@ -22,7 +22,8 @@ class SimpleChunker(BaseChunker):
             chunk = text[i : i + self.chunk_size]
             chunks.append(chunk)
         return chunks
-        
+
+
 class AdvancedChunker(BaseChunker):
     @abstractmethod
     def chunk_text(self, text: str) -> List[str]:

@@ -16,7 +16,7 @@ _judge_client = httpx.Client(base_url=settings.OLLAMA_BASE_URL, timeout=600.0)
 
 def _normalise(score: float) -> float:
     """Normalise score to 0-1 range regardless of LLM output scale."""
-    if score > 1.0:
+    if score > 2.0:
         score = score / 10.0
     return min(1.0, max(0.0, score))
 

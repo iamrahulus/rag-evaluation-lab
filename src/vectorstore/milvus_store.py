@@ -1,13 +1,7 @@
 from typing import Dict, List
 
-from pymilvus import (
-    Collection,
-    CollectionSchema,
-    DataType,
-    FieldSchema,
-    connections,
-    utility,
-)
+from pymilvus import (Collection, CollectionSchema, DataType, FieldSchema,
+                      connections, utility)
 
 from src.config import settings
 
@@ -20,10 +14,22 @@ class MilvusStore:
     def _connect(self) -> None:
         """Establish connection to Milvus"""
         connections.connect(uri=settings.MILVUS_DB_PATH)
+    
+    def is_empty(self) -> bool:
+        """Check if the collection is empty or does not exist."""
+        if not utility.has_collection(self.collection_name):
+            return True
+        return Collection(self.collection_name).num_entities == 0
 
     def create_collection(self, dim: int = settings.EMBEDDING_DIMENSION) -> None:
         """Create a new collection."""
         if utility.has_collection(self.collection_name):
+            collection = Collection(self.collection_name)
+            if collection.num_entities > 0:
+                # Data exists — reuse it, skip ingestion
+                self.collection = collection
+                self.collection.load()
+                return
             Collection(self.collection_name).drop()
 
         fields = [
