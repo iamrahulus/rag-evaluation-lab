@@ -2,3 +2,6 @@
 *.db
 *.db.lock
 __pycache__/
+milvus.db
+.milvus.db.lock
+eval_report.json_bkup
