@@ -5,7 +5,6 @@ The results are saved to `eval_report.json`.
 Usage: python -m src.evaluation.run_eval
 """
 
-import json
 
 from src.chunking.chunking_strategies import SimpleChunker
 from src.config import settings
@@ -16,7 +15,7 @@ from src.vectorstore.milvus_store import MilvusStore
 from .evaluator import RAGEvaluator
 
 
-def main():
+def main() -> None:
     print("Initialising RAG pipeline for evaluation...")
 
     llm = OllamaLLM()

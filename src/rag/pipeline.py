@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import List
 
 from src.chunking.chunking_strategies import BaseChunker
 from src.config import settings

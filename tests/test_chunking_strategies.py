@@ -32,8 +32,6 @@ def test_chunk_text_single_chunk_if_small():
     assert len(chunks) == 1
     assert chunks[0] == "short text"
 
-from src.chunking.chunking_strategies import AdvancedChunker
-
 
 def test_advanced_chunker_returns_list():
     chunker = AdvancedChunker(chunk_size=500, overlap=50)

@@ -1,5 +1,4 @@
 from typing import List
-from abc import abstractmethod
 
 from src.config import settings
 

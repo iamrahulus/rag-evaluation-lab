@@ -18,8 +18,8 @@ class MilvusStore:
     def is_empty(self) -> bool:
         """Check if the collection is empty or does not exist."""
         if not utility.has_collection(self.collection_name):
-            return True
-        return Collection(self.collection_name).num_entities == 0
+            return bool(True)
+        return bool(Collection(self.collection_name).num_entities == 0)
 
     def create_collection(self, dim: int = settings.EMBEDDING_DIMENSION) -> None:
         """Create a new collection."""

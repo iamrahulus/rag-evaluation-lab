@@ -9,12 +9,10 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from typing import Any
 
-from src.chunking.chunking_strategies import SimpleChunker
 from src.config import settings
-from src.llm.ollama import OllamaLLM
 from src.rag.pipeline import RAGPipeline
-from src.vectorstore.milvus_store import MilvusStore
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Optional
 
 from .metrics import (
     answer_correctness,
@@ -95,7 +93,7 @@ class RAGEvaluator:
         )
 
         # Run all metrics
-        print(f"    Scoring metrics...")
+        print("    Scoring metrics...")
 
         metrics_results = {
             "answer_relevance": answer_relevance(test_case["question"], actual_answer),
@@ -126,7 +124,7 @@ class RAGEvaluator:
             retrieved_context=retrieved_context,
         )
 
-        print(f"    Scoring metrics in parallel...")
+        print("    Scoring metrics in parallel...")
 
         # Define all metric calls as (name, fn, args) tuples
         metric_calls = {
@@ -158,12 +156,12 @@ class RAGEvaluator:
         print(f"    Overall score: {result.overall_score:.2f}")
         return result
 
-    def run(self, test_cases: list[dict] = None) -> EvalReport:
+    def run(self, test_cases: Optional[list[dict]] = None) -> EvalReport:
         if test_cases is None:
             test_cases = TEST_CASES
 
         print(f"\n{'='*60}")
-        print(f"RAG Pipeline Evaluation")
+        print("RAG Pipeline Evaluation")
         print(f"Model: {settings.LLM_MODEL}")
         print(f"Test cases: {len(test_cases)}")
         print(f"{'='*60}\n")
@@ -184,7 +182,7 @@ class RAGEvaluator:
         self._print_report(report)
         return report
     
-    def run_parallel(self, test_cases: list[dict] = None) -> EvalReport:
+    def run_parallel(self, test_cases: Optional[list[dict]] = None) -> EvalReport:
         print("Parallel evaluation mode enabled — running metrics for each test case in parallel. And test cases in parallel too.")
         if test_cases is None:
             test_cases = TEST_CASES
@@ -220,7 +218,7 @@ class RAGEvaluator:
         self._print_report(report)
         return report
 
-    def _print_report(self, report: EvalReport):
+    def _print_report(self, report: EvalReport) -> None:
         print(f"\n{'='*60}")
         print(f"EVALUATION REPORT — {report.timestamp}")
         print(f"{'='*60}")
@@ -233,7 +231,7 @@ class RAGEvaluator:
 
         print(f"\n  {'OVERALL':<25} {'':20} {report.overall_score:.2f}")
 
-        print(f"\n\nPER-TEST RESULTS:")
+        print("\n\nPER-TEST RESULTS:")
         print(f"{'-'*40}")
         for result in report.results:
             print(f"\n  [{result.test_id}] {result.question[:70]}")
@@ -244,7 +242,7 @@ class RAGEvaluator:
 
         print(f"\n{'='*60}")
 
-    def save_report(self, report: EvalReport, path: str = "eval_report.json"):
+    def save_report(self, report: EvalReport, path: str = "eval_report.json") -> None:
         data = {
             "timestamp": report.timestamp,
             "model": report.model,

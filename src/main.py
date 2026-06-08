@@ -1,7 +1,7 @@
 import json
 from typing import List
 
-from src.chunking.chunking_strategies import AdvancedChunker, SimpleChunker
+from src.chunking.chunking_strategies import SimpleChunker
 from src.config import settings
 from src.llm.ollama import OllamaLLM
 from src.rag.pipeline import RAGPipeline
@@ -13,6 +13,7 @@ import argparse
 parser = argparse.ArgumentParser(description="Run the RAG pipeline")
 parser.add_argument("--eval", action= "store_true", default=False, help="Run evaluation after ingestion")
 parser.add_argument("--parallel", action= "store_true", default=False, help="Run evaluation in parallel mode (only applicable if --eval is set)")
+#Another can be added for selecting chunking strategy if needed, e.g. --chunker simple|advanced
 args = parser.parse_args()
 def main() -> None:
     llm = OllamaLLM()

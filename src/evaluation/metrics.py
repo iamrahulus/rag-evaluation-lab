@@ -33,7 +33,7 @@ def _judge(prompt: str, metric_name: str) -> dict[str, Any]:
     response.raise_for_status()
     raw = response.json()["response"].strip()
     try:
-        return json.loads(raw)
+        return dict(json.loads(raw))
     except json.JSONDecodeError:
         return {"score": 0.5, "reason": raw, "metric": metric_name}
 
