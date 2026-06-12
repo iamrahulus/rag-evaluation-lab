@@ -1,3 +1,10 @@
+ # RAG Evaluation Lab
+
+Baseline RAG pipeline built as an Equal Experts take-home exercise.
+Evolving into a personal lab for evaluation framework experimentation.
+
+## Baseline (main / v1.0.0-ee-baseline) 
+ 
  ## :warning: Please read these instructions carefully and entirely first
 * Clone this repository to your local machine.
 * Use your IDE of choice to complete the assignment.
@@ -449,3 +456,10 @@ Failed eval jobs dead-lettered and alerted - never silently dropped.
 A complete architecture diagram for a production grade RAG system: 
 
 <img width="5532" height="4302" alt="RAG Prod Grade Pipeline" src="https://github.com/user-attachments/assets/3fc8b0b6-4816-4c98-a880-f16970a40ee0" />
+
+
+## Roadmap
+- [ ] feature/ragas-integration — native RAGAS metrics alongside custom eval
+- [ ] feature/hybrid-search — BM25 + dense vector + RRF via Milvus
+- [ ] feature/reranking — cross-encoder between retrieve() and query()
+- [ ] feature/query-expansion — multi-query before embedding

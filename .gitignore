@@ -1,7 +1,7 @@
-.venv/
-*.db
-*.db.lock
-__pycache__/
 milvus.db
-.milvus.db.lock
-eval_report.json_bkup
+.env
+__pycache__/
+.mypy_cache/
+.ruff_cache/
+*.pyc
+eval_report.json
