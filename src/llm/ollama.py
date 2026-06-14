@@ -6,7 +6,6 @@ from src.config import settings
 
 from .base import BaseLLM
 
-
 class OllamaLLM(BaseLLM):
     def __init__(
         self,
