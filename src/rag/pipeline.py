@@ -56,8 +56,7 @@ class RAGPipeline:
         """Retrieve relevant context chunks for a question."""
         question_embedding = self.llm.get_embeddings(question)
         results = self.vector_store.retrieve(
-        query_embedding=question_embedding,
-        limit=top_k
+            query_embedding=question_embedding, limit=top_k
         )
         return "\n\n".join(str(hit["text"]) for hit in results)
 
@@ -78,6 +77,8 @@ class RAGPipeline:
 
         Answer:"""
         return self.llm.generate(prompt=prompt, temperature=temperature)
+
+
 """
     def query(
         self,

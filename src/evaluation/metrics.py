@@ -20,6 +20,7 @@ def _normalise(score: float) -> float:
         score = score / 10.0
     return min(1.0, max(0.0, score))
 
+
 def _judge(prompt: str, metric_name: str) -> dict[str, Any]:
     """Call the LLM judge with JSON mode and return parsed response."""
     payload = {

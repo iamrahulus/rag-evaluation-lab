@@ -31,16 +31,18 @@ class AdvancedChunker(BaseChunker):
     ):
         self.chunk_size = chunk_size
         self.overlap = overlap
-    
+
     """
     Paragraph-aware chunker. Splits on natural paragraph boundaries
     rather than fixed character counts, preserving semantic coherence.
     Falls back to sentence boundaries if paragraphs exceed max_chunk_size.
     """
+
     def _split_into_sentences(self, text: str) -> list[str]:
         """Split text into sentences on punctuation boundaries."""
         import re
-        sentences = re.split(r'(?<=[.!?])\s+', text.strip())
+
+        sentences = re.split(r"(?<=[.!?])\s+", text.strip())
         return [s for s in sentences if s.strip()]
 
     def _chunk_large_paragraph(self, para: str) -> list[str]:
@@ -60,7 +62,7 @@ class AdvancedChunker(BaseChunker):
         if current:
             chunks.append(current.strip())
 
-        return chunks    
+        return chunks
 
     def chunk_text(self, text: str) -> list[str]:
         if not text or not text.strip():
@@ -81,7 +83,10 @@ class AdvancedChunker(BaseChunker):
                     chunks.append(sentence_chunk)
                 overlap_buffer = self._get_overlap(para)
 
-            elif len(overlap_buffer) + len(current_chunk) + len(para) + 2 <= self.chunk_size:
+            elif (
+                len(overlap_buffer) + len(current_chunk) + len(para) + 2
+                <= self.chunk_size
+            ):
                 current_chunk += para + "\n\n"
 
             else:
@@ -101,8 +106,8 @@ class AdvancedChunker(BaseChunker):
         if not self.overlap or len(text) <= self.overlap:
             return ""
         # Trim to last overlap_size chars but start at a word boundary
-        tail = text[-self.overlap:]
+        tail = text[-self.overlap :]
         first_space = tail.find(" ")
         if first_space > 0:
-            tail = tail[first_space + 1:]
+            tail = tail[first_space + 1 :]
         return tail + " "

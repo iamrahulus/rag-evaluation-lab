@@ -1,5 +1,7 @@
 from unittest.mock import Mock, patch
+
 import pytest
+
 from src.llm.ollama import OllamaLLM
 
 
@@ -53,7 +55,7 @@ def test_ollama_get_embeddings(mock_ollama):
         "/api/embed",  # new endpoint
         json={
             "model": mock_ollama.embedding_model,
-            "input": "test text"  # new param name
+            "input": "test text",  # new param name
         },
     )
 

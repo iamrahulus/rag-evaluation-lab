@@ -1,20 +1,29 @@
+import argparse
 import json
 from typing import List
+
+from pymilvus import connections
 
 from src.chunking.chunking_strategies import SimpleChunker
 from src.config import settings
 from src.llm.ollama import OllamaLLM
 from src.rag.pipeline import RAGPipeline
 from src.vectorstore.milvus_store import MilvusStore
-from pymilvus import connections
-
-import argparse
 
 parser = argparse.ArgumentParser(description="Run the RAG pipeline")
-parser.add_argument("--eval", action= "store_true", default=False, help="Run evaluation after ingestion")
-parser.add_argument("--parallel", action= "store_true", default=False, help="Run evaluation in parallel mode (only applicable if --eval is set)")
-#Another can be added for selecting chunking strategy if needed, e.g. --chunker simple|advanced
+parser.add_argument(
+    "--eval", action="store_true", default=False, help="Run evaluation after ingestion"
+)
+parser.add_argument(
+    "--parallel",
+    action="store_true",
+    default=False,
+    help="Run evaluation in parallel mode (only applicable if --eval is set)",
+)
+# Another can be added for selecting chunking strategy if needed, e.g. --chunker simple|advanced
 args = parser.parse_args()
+
+
 def main() -> None:
     llm = OllamaLLM()
     # Candidate to Initialize chunker
@@ -38,6 +47,7 @@ def main() -> None:
         if args.eval:
             print("Running evaluation...")
             from src.evaluation.evaluator import RAGEvaluator
+
             evaluator = RAGEvaluator(pipeline=pipeline)
             if args.parallel:
                 report = evaluator.run_parallel()
@@ -62,6 +72,7 @@ def main() -> None:
     finally:
         llm.close()
         connections.disconnect("default")  # explicit Milvus cleanup before shutdown
+
 
 if __name__ == "__main__":
     main()

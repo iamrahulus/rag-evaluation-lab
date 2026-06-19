@@ -1,7 +1,13 @@
 from typing import Dict, List
 
-from pymilvus import (Collection, CollectionSchema, DataType, FieldSchema,
-                      connections, utility)
+from pymilvus import (
+    Collection,
+    CollectionSchema,
+    DataType,
+    FieldSchema,
+    connections,
+    utility,
+)
 
 from src.config import settings
 
@@ -14,7 +20,7 @@ class MilvusStore:
     def _connect(self) -> None:
         """Establish connection to Milvus"""
         connections.connect(uri=settings.MILVUS_DB_PATH)
-    
+
     def is_empty(self) -> bool:
         """Check if the collection is empty or does not exist."""
         if not utility.has_collection(self.collection_name):

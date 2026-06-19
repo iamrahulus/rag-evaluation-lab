@@ -5,14 +5,13 @@ five evaluation dimensions using LLM-as-judge.
 """
 
 import json
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from src.config import settings
 from src.rag.pipeline import RAGPipeline
-from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Optional
 
 from .metrics import (
     answer_correctness,
@@ -54,7 +53,8 @@ class EvalReport:
             return {}
         metrics = self.results[0].scores.keys()
         return {
-            metric: sum(r.scores.get(metric, 0) for r in self.results) / len(self.results)
+            metric: sum(r.scores.get(metric, 0) for r in self.results)
+            / len(self.results)
             for metric in metrics
         }
 
@@ -98,9 +98,13 @@ class RAGEvaluator:
         metrics_results = {
             "answer_relevance": answer_relevance(test_case["question"], actual_answer),
             "faithfulness": faithfulness(retrieved_context, actual_answer),
-            "answer_correctness": answer_correctness(test_case["expected_answer"], actual_answer),
+            "answer_correctness": answer_correctness(
+                test_case["expected_answer"], actual_answer
+            ),
             "hallucination_rate": hallucination_rate(retrieved_context, actual_answer),
-            "context_relevance": context_relevance(test_case["question"], retrieved_context),
+            "context_relevance": context_relevance(
+                test_case["question"], retrieved_context
+            ),
         }
 
         result.scores = {k: v["score"] for k, v in metrics_results.items()}
@@ -108,7 +112,7 @@ class RAGEvaluator:
 
         print(f"    Overall score: {result.overall_score:.2f}")
         return result
-    
+
     def run_test_case_parallel(self, test_case: dict) -> TestResult:
         print(f"  Running: {test_case['id']} — {test_case['question'][:60]}...")
 
@@ -128,11 +132,23 @@ class RAGEvaluator:
 
         # Define all metric calls as (name, fn, args) tuples
         metric_calls = {
-            "answer_relevance":  (answer_relevance,  (test_case["question"], actual_answer)),
-            "faithfulness":      (faithfulness,       (retrieved_context, actual_answer)),
-            "answer_correctness":(answer_correctness, (test_case["expected_answer"], actual_answer)),
-            "hallucination_rate":(hallucination_rate, (retrieved_context, actual_answer)),
-            "context_relevance": (context_relevance,  (test_case["question"], retrieved_context)),
+            "answer_relevance": (
+                answer_relevance,
+                (test_case["question"], actual_answer),
+            ),
+            "faithfulness": (faithfulness, (retrieved_context, actual_answer)),
+            "answer_correctness": (
+                answer_correctness,
+                (test_case["expected_answer"], actual_answer),
+            ),
+            "hallucination_rate": (
+                hallucination_rate,
+                (retrieved_context, actual_answer),
+            ),
+            "context_relevance": (
+                context_relevance,
+                (test_case["question"], retrieved_context),
+            ),
         }
 
         # Fire all metric calls in parallel
@@ -148,7 +164,11 @@ class RAGEvaluator:
                     metrics_results[name] = future.result()
                 except Exception as e:
                     print(f"    Metric {name} failed: {e}")
-                    metrics_results[name] = {"score": 0.0, "raw": str(e), "metric": name}
+                    metrics_results[name] = {
+                        "score": 0.0,
+                        "raw": str(e),
+                        "metric": name,
+                    }
 
         result.scores = {k: v["score"] for k, v in metrics_results.items()}
         result.metric_details = {k: v["raw"] for k, v in metrics_results.items()}
@@ -181,9 +201,11 @@ class RAGEvaluator:
 
         self._print_report(report)
         return report
-    
+
     def run_parallel(self, test_cases: Optional[list[dict]] = None) -> EvalReport:
-        print("Parallel evaluation mode enabled — running metrics for each test case in parallel. And test cases in parallel too.")
+        print(
+            "Parallel evaluation mode enabled — running metrics for each test case in parallel. And test cases in parallel too."
+        )
         if test_cases is None:
             test_cases = TEST_CASES
 

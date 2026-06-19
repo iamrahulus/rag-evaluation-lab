@@ -5,7 +5,6 @@ The results are saved to `eval_report.json`.
 Usage: python -m src.evaluation.run_eval
 """
 
-
 from src.chunking.chunking_strategies import SimpleChunker
 from src.config import settings
 from src.llm.ollama import OllamaLLM
@@ -27,6 +26,7 @@ def main() -> None:
     print("Loading documents...")
     with open(settings.CASE_STUDIES_PATH, "r", encoding="utf-8") as f:
         import json as _json
+
         case_studies = _json.load(f)
     documents = [study["content"] for study in case_studies]
     pipeline.add_documents(documents)
