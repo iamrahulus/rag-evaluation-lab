@@ -1,4 +1,4 @@
-from unittest.mock import Mock
+from unittest.mock import Mock, patch
 
 import pytest
 
@@ -35,3 +35,53 @@ def test_pipeline_query(mock_components):
     mock_components["vector_store"].retrieve.assert_called_once()
     mock_components["llm"].generate.assert_called_once()
     assert result == "test answer"
+
+
+def test_add_documents_saves_bm25_model(mock_components):
+    """BM25 model is persisted after ingestion so --eval sessions can load it."""
+    bm25 = Mock()
+    chunker = mock_components["chunker"]
+    chunker.chunk_text.return_value = ["chunk1", "chunk2"]
+
+    with patch("src.rag.pipeline.os.path.exists", return_value=False):
+        pipeline = RAGPipeline(
+            llm=mock_components["llm"],
+            chunker=chunker,
+            vector_store=mock_components["vector_store"],
+            sparse_encoder=bm25,
+        )
+        pipeline.add_documents(["doc1"])
+
+    bm25.fit.assert_called_once()
+    bm25.save.assert_called_once()
+
+
+def test_init_loads_bm25_model_when_file_exists(mock_components):
+    """BM25 model is auto-loaded at startup so hybrid search works without re-ingesting."""
+    bm25 = Mock()
+    bm25.is_fitted = False
+
+    with patch("src.rag.pipeline.os.path.exists", return_value=True):
+        RAGPipeline(
+            llm=mock_components["llm"],
+            chunker=mock_components["chunker"],
+            vector_store=mock_components["vector_store"],
+            sparse_encoder=bm25,
+        )
+
+    bm25.load.assert_called_once()
+
+
+def test_init_skips_bm25_load_when_no_file(mock_components):
+    """No load attempt is made when the model file does not exist yet."""
+    bm25 = Mock()
+
+    with patch("src.rag.pipeline.os.path.exists", return_value=False):
+        RAGPipeline(
+            llm=mock_components["llm"],
+            chunker=mock_components["chunker"],
+            vector_store=mock_components["vector_store"],
+            sparse_encoder=bm25,
+        )
+
+    bm25.load.assert_not_called()

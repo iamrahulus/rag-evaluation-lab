@@ -45,7 +45,6 @@ class OllamaLLM(BaseLLM):
     def get_embeddings(self, text: str) -> List[float]:
         """Get embeddings using Ollama API."""
         payload = {"model": self.embedding_model, "input": text}
-
         response = self.client.post("/api/embed", json=payload)
         response.raise_for_status()
 

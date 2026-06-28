@@ -6,40 +6,31 @@ from src.vectorstore.milvus_store import MilvusStore
 
 
 @pytest.fixture
-def mock_milvus():
-    with patch("src.vectorstore.milvus_store.connections") as mock_conn, patch(
-        "src.vectorstore.milvus_store.Collection"
-    ) as mock_coll, patch("src.vectorstore.milvus_store.utility") as mock_utility:
-
-        mock_utility.has_collection.return_value = False
-        mock_collection = MagicMock()
-        mock_coll.return_value = mock_collection
-
-        yield {
-            "connections": mock_conn,
-            "collection": mock_collection,
-            "utility": mock_utility,
-        }
+def mock_client():
+    with patch("src.vectorstore.milvus_store.MilvusClient") as mock_cls:
+        client = MagicMock()
+        mock_cls.return_value = client
+        mock_cls.create_schema.return_value = MagicMock()
+        mock_cls.prepare_index_params.return_value = MagicMock()
+        client.has_collection.return_value = False
+        client.get_collection_stats.return_value = {"row_count": 0}
+        yield client
 
 
-def test_milvus_store_init(mock_milvus):
+def test_milvus_store_init(mock_client):
     MilvusStore()
-    mock_milvus["connections"].connect.assert_called_once()
+    mock_client.assert_not_called()
 
 
-def test_milvus_store_create_collection(mock_milvus):
+def test_milvus_store_create_collection(mock_client):
     store = MilvusStore()
     store.create_collection()
 
-    # Check if collection exists
-    mock_milvus["utility"].has_collection.assert_called_once()
-
-    # Check collection creation
-    mock_milvus["collection"].create_index.assert_called_once()
-    mock_milvus["collection"].load.assert_called_once()
+    mock_client.has_collection.assert_called_once()
+    mock_client.create_collection.assert_called_once()
 
 
-def test_milvus_store_insert_embeddings(mock_milvus):
+def test_milvus_store_insert_embeddings(mock_client):
     store = MilvusStore()
 
     embeddings = [[1.0, 2.0], [3.0, 4.0]]
@@ -47,31 +38,26 @@ def test_milvus_store_insert_embeddings(mock_milvus):
 
     store.insert_embeddings(embeddings, texts)
 
-    # Check insert was called with correct entities
-    mock_milvus["collection"].insert.assert_called_once()
-    mock_milvus["collection"].flush.assert_called_once()
+    mock_client.insert.assert_called_once()
 
 
-def test_milvus_store_retrieve(mock_milvus):
+def test_milvus_store_retrieve(mock_client):
     store = MilvusStore()
 
-    # Mock search results
-    mock_hit = MagicMock()
-    mock_hit.entity.get.return_value = "test text"
-    mock_hit.score = 0.95
-    mock_milvus["collection"].search.return_value = [[mock_hit]]
+    mock_client.search.return_value = [[
+        {"entity": {"text": "test text"}, "distance": 0.95}
+    ]]
 
     results = store.retrieve([1.0, 2.0], limit=1)
 
     assert len(results) == 1
     assert results[0]["text"] == "test text"
     assert results[0]["score"] == 0.95
-    mock_milvus["collection"].search.assert_called_once()
+    mock_client.search.assert_called_once()
 
 
-def test_milvus_store_insert_embeddings_validation(mock_milvus):
+def test_milvus_store_insert_embeddings_validation(mock_client):
     store = MilvusStore()
 
-    # Test mismatched lengths
     with pytest.raises(ValueError, match="Number of embeddings and texts must match"):
         store.insert_embeddings([[1.0, 2.0]], ["text1", "text2"])

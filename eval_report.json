@@ -1,161 +1,161 @@
 {
-  "timestamp": "2026-06-08T12:35:33.333638",
+  "timestamp": "2026-06-22T06:45:11.366043",
   "model": "tinyllama",
   "total_cases": 7,
-  "overall_score": 0.6028571428571429,
+  "overall_score": 0.6337142857142857,
   "aggregate_scores": {
-    "answer_relevance": 0.71,
-    "faithfulness": 0.6571428571428571,
-    "answer_correctness": 0.6900000000000001,
-    "hallucination_rate": 0.6714285714285715,
-    "context_relevance": 0.2857142857142857
+    "answer_relevance": 0.8714285714285713,
+    "faithfulness": 0.7285714285714286,
+    "answer_correctness": 0.7114285714285715,
+    "hallucination_rate": 0.4571428571428572,
+    "context_relevance": 0.39999999999999997
   },
   "results": [
     {
       "test_id": "tc_001",
       "question": "What work did Equal Experts do for IG Group?",
       "expected_answer": "Equal Experts helped IG Group improve DevOps practices through an embedded partnership. Key outcomes included reducing change failure rate from 33% to zero, increasing code coverage from 40% to 90%, and reducing deployment time from 60 days to a matter of hours.",
-      "actual_answer": "The context suggests that Equal Experts worked with the Home Office as a digital platform partner to help them design and develop their Single Intelligence Platform (SIP) over time. Their work included embedding civil servants and independent contractors into a wider Digital Customer Journey Delivery Team, starting with two-week springs and regular retrospectives, and self-employed workers via the Coronavirus Job Retention Scheme, Self-Employment Income Support Scheme, and Eat Out to Help Out Scheme. The team structure enabled the MDTP to work differently on a multi-tax platform (MDTP) that represented specialists from each discipline at team level.",
-      "overall_score": 0.646,
+      "actual_answer": "Equally experienced experts at Equal Experts designed and deployed a transformation plan to equip IG developers with the confidence and skills to adopt best practices and apply them to new areas. The program aimed to empower the company's product development teams to become transformation drivers, enabling them to succeed in an ever-changing digital landscape.",
+      "overall_score": 0.72,
       "scores": {
-        "answer_relevance": 1.0,
-        "faithfulness": 0.9,
-        "answer_correctness": 0.33,
-        "hallucination_rate": 0.8,
-        "context_relevance": 0.2
+        "answer_relevance": 0.8,
+        "faithfulness": 0.8,
+        "answer_correctness": 0.7,
+        "hallucination_rate": 0.5,
+        "context_relevance": 0.8
       },
       "metric_details": {
-        "answer_relevance": "The answer directly responds to what was asked, is on-topic, and provides the information the question was seeking about Equal Experts' work with IG Group.",
-        "faithfulness": "The answer accurately retrieves key information from the context, including the collaboration with the Home Office on the Single Intelligence Platform (SIP), but introduces minor discrepancies such as the use of 'Digital Customer Journey Delivery Team' instead of 'Digital Platform at Mendeley'",
-        "answer_correctness": "The actual answer does not convey the same meaning as the expected answer, missing key facts such as reducing change failure rate and decreasing deployment time, while only mentioning the embedding of civil servants and independent contractors",
-        "hallucination_rate": "Specific details about the number of weeks for sprints and retrospectives are not provided in the context",
-        "context_relevance": "The retrieved context does not provide information about Equal Experts' work for IG Group, only mentioning their collaboration with the Home Office"
+        "answer_relevance": "The answer provides relevant information about the work done by Equal Experts for IG Group but does not directly respond to what was asked with a specific outcome or metric.",
+        "faithfulness": "The answer is faithful to the context, supporting details about transformation plans and empowerment of product development teams, but introduces a new piece of information not present in the original context.",
+        "answer_correctness": "The actual answer conveys the same meaning as the expected answer, with key facts about improving DevOps practices, skills development, and empowerment of product teams present in both answers, but lacks specific numeric details",
+        "hallucination_rate": "The original text does not provide enough information about the specifics of the program or its success, leading to unverifiable claims about its impact",
+        "context_relevance": "The retrieved context provides relevant information about the work of Equal Experts, specifically their collaboration with HMRC on the Multi Tax Digital Platform (MDTP) and their role in helping the Home Office build digital capabilities"
       }
     },
     {
       "test_id": "tc_002",
       "question": "What were the key findings of the Forrester study on Equal Experts?",
       "expected_answer": "The Forrester Total Economic Impact study found $61 million in benefits from reduced costs and increased revenues, an 11 month reduction in time to market, and over $500,000 in losses avoided over three years.",
-      "actual_answer": "Based on the context provided, it is not possible to answer based on available information. The question asks for a key finding from the study conducted by Forrester.",
-      "overall_score": 0.38,
+      "actual_answer": "The context mentioned that the study conducted by Forrester demonstrates the value of reducing time to market at scale for organizations, which aims to adapt quickly, deploy new digital capabilities, and manage operating costs. The key finding was that equal experts were found to lead to better outcomes in terms of faster time to market and higher success rates in achieving digital transformation goals.",
+      "overall_score": 0.426,
       "scores": {
-        "answer_relevance": 0.0,
+        "answer_relevance": 0.8,
         "faithfulness": 0.0,
-        "answer_correctness": 0.9,
+        "answer_correctness": 0.33,
         "hallucination_rate": 1.0,
         "context_relevance": 0.0
       },
       "metric_details": {
-        "answer_relevance": "The answer does not directly respond to the question about the key findings of the Forrester study on Equal Experts",
-        "faithfulness": "The answer is not faithful to the context provided as it introduces information (a study conducted by Forrester) that is not present in the original text.",
-        "answer_correctness": "The actual answer provides the same key findings as the expected answer, including total economic impact, time to market reduction, and cost savings, although with slightly different wording",
-        "hallucination_rate": "The context does not provide any information to verify a key finding from the study conducted by Forrester, indicating that all claims are hallucinations.",
-        "context_relevance": "The retrieved context does not contain any information about the Forrester study on Equal Experts, making it irrelevant for answering the question."
+        "answer_relevance": "The answer provides the key findings of the Forrester study on Equal Experts, directly addressing the question, while slightly straying from providing a detailed explanation.",
+        "faithfulness": "The answer introduces information not present in the context, including a study by Forrester, which is unrelated to the provided RAG pipeline evaluation",
+        "answer_correctness": "The actual answer partially matches the expected answer, as it mentions a study by Forrester, but misses key benefits ($61 million in benefits) and specific cost savings (over $500,000 in losses avoided), while also altering the context to focus on time to market and digital transformation success rates.",
+        "hallucination_rate": "No relevant information about a specific study or its findings was provided in the context, indicating hallucinations.",
+        "context_relevance": "The retrieved context does not contain any information about the Forrester study on Equal Experts, which is necessary to answer the question."
       }
     },
     {
       "test_id": "tc_003",
       "question": "How did Equal Experts help Spirit Super?",
       "expected_answer": "Equal Experts helped Spirit Super introduce event-driven architecture and cloud-native microservices. Results included reducing third-party integration time from 8 weeks to 2 days, achieving zero downtime, and increasing team capacity for new project work from 5% to 66%.",
-      "actual_answer": "The pilot version of Athena was launched within seven days, and current data ingestion is being handled by AWS if necessary. The project has employed several ways to work with AWS, including collaborative tool sets that allow the team to scale up as new projects are kicked off. Working closely with Home Office civil servants and independent contractors, Equal Experts helped build capabilities over time while embedding them into a wider Digital Customer Journey delivery team.",
-      "overall_score": 0.7,
+      "actual_answer": "Based on the context, Equal Experts helped Spirit Super transform its Software Development Life Cycle, build a cloud migration framework, and deliver a third-party member registration service. As a trusted superannuation provider, Spirit Super recognized the value of digital innovation to stay ahead of the competition and navigate complex changes in the sector, and Equal Experts provided the necessary ways of working for transforming its Software Development Life Cycle and building the cloud platform that would grow with the business while providing flexibility to adapt to changes within the industry.",
+      "overall_score": 0.67,
       "scores": {
-        "answer_relevance": 0.8,
-        "faithfulness": 0.9,
-        "answer_correctness": 0.8,
-        "hallucination_rate": 0.8,
-        "context_relevance": 0.2
+        "answer_relevance": 0.9,
+        "faithfulness": 0.8,
+        "answer_correctness": 0.75,
+        "hallucination_rate": 0.5,
+        "context_relevance": 0.4
       },
       "metric_details": {
-        "answer_relevance": "The answer directly responds to what was asked, but could be more concise and specific about the benefits Spirit Super gained from working with Equal Experts",
-        "faithfulness": "The answer is largely faithful to the context, accurately describing the pilot version's launch and AWS integration, but introduces minor discrepancies in phrasing and wording compared to the original article",
-        "answer_correctness": "The actual answer largely aligns with the expected answer, retaining key facts such as reduced integration time, zero downtime, increased team capacity, and incorporation of AWS tools, but minor differences in wording and contextual details exist.",
-        "hallucination_rate": "Claims cannot be verified from the provided context as they are specific dates and details that are not mentioned in the original article.",
-        "context_relevance": "The retrieved context does not contain information on how Equal Experts helped Spirit Super, nor is it relevant to the topic of retrieving quality in a RAG pipeline"
+        "answer_relevance": "The answer directly responds to what was asked, providing information on the transformation of Spirit Super's software development life cycle and cloud migration framework",
+        "faithfulness": "The answer introduces new information (Innovative new software) not present in the provided context, but still attempts to provide a coherent response that builds upon the initial context about Spirit Super's work with Athena.",
+        "answer_correctness": "The actual answer largely conveys the same meaning as the expected answer, with key facts (e.g., reducing integration time, achieving zero downtime) and a similar overall tone being present, although some minor details and specific achievements are slightly different.",
+        "hallucination_rate": "Claims and specific details not supported by the provided context, suggesting fabrication or inference beyond what is explicitly stated.",
+        "context_relevance": "The retrieved context is somewhat relevant, as it discusses the Home Office and Athena project, but lacks specific information on how Equal Experts helped Spirit Super."
       }
     },
     {
       "test_id": "tc_004",
       "question": "What did Equal Experts build for Travelopia using GenAI?",
       "expected_answer": "Equal Experts built a GenAI chatbot called Athena for Travelopia's Enchanting Travels brand. The chatbot reduced customer response times from 24 hours to instant and was rolled out to the entire team of Travel Coordinators within a few weeks.",
-      "actual_answer": "Equal Experts built a chatbot-powered customer service platform using GenAI to improve the organization's methods of working. The chatbot, which utilized machine learning models and natural language processing (NLP), was able to provide timely and accurate responses for customers' queries on the company's various platforms, including social media and email support. The chatbot-powered platform helped to increase customer satisfaction, reduce response times, and improve the overall workload of customer service representatives.",
-      "overall_score": 0.5,
+      "actual_answer": "The quote mentions the internal team building native iOS and Android apps, improving the services provided by the company as an example of how Equal Experts helped to improve customer wait times from 24 hours to instant with GenAI. This is based on the given context, where Travelopia's internal team and staff have streamlined their skills and delivered faster information to customers within the company.",
+      "overall_score": 0.8,
       "scores": {
         "answer_relevance": 1.0,
-        "faithfulness": 0.0,
-        "answer_correctness": 0.9,
-        "hallucination_rate": 0.4,
-        "context_relevance": 0.2
+        "faithfulness": 0.8,
+        "answer_correctness": 0.8,
+        "hallucination_rate": 0.8,
+        "context_relevance": 0.6
       },
       "metric_details": {
-        "answer_relevance": "The answer directly responds to the question, is on-topic, and provides relevant information about the chatbot-powered customer service platform built for Travelopia using GenAI.",
-        "faithfulness": "The answer introduces information not present in the context, specifically about a chatbot-powered customer service platform and GenAI, which is unrelated to the provided RAG pipeline context.",
-        "answer_correctness": "The actual answer closely matches the expected answer semantically, with most key facts present and conveying similar meaning despite slight variations in wording.",
-        "hallucination_rate": "The answer contains unverifiable claims and technical terms not mentioned in the provided context.",
-        "context_relevance": "The retrieved context does not provide sufficient information about what Equal Experts built for Travelopia using GenAI, making it unclear how relevant the context is to answering the question."
+        "answer_relevance": "The answer directly responds to what was asked, providing a clear example of the project built by Equal Experts for Travelopia using GenAI.",
+        "faithfulness": "The answer is mostly faithful to the context, accurately describing the initiative as technology-driven but with roadblocks in live production, although it introduces information not present in the context about GenAI and customer wait times.",
+        "answer_correctness": "The actual answer conveys the same meaning as the expected answer, with key facts about the GenAI chatbot and its impact on customer wait times being present in both answers.",
+        "hallucination_rate": "Claims about specific technology solutions and customer outcomes that cannot be verified with the provided context",
+        "context_relevance": "The retrieved context contains some information about GenAI, React, and AWS Cloud, but lacks specific details about the project built for Travelopia"
       }
     },
     {
       "test_id": "tc_005",
       "question": "What were the results of the HMRC Illuminate platform?",
       "expected_answer": "The Illuminate platform identified millions of pounds in confirmed tax at risk and saved tens of millions by stopping fraudulent claims before they were paid. It enabled bulk searching of unstructured data across millions of documents.",
-      "actual_answer": "The context above refers to a case study of an AI assistant, where a digital platform was initiated for one brand but replicated success with another Travelopia brand. The successful execution and fast pace led to lessons learned that were applied to other brands in the same division. While the platform has had an impressive track record, the project's visibility and impact have been measured through continuous delivery initiatives and feedback cycles. The next brand signed up for the Illuminate platform was seen as a success due to the same lessons learned on previous iterations.",
-      "overall_score": 0.41400000000000003,
+      "actual_answer": "The context provided above suggests that Equal Experts has helped build Illuminate, an enterprise search and discovery platform for HMRC. The platform has enabled the organization to identify millions of potential tax frauds before impacting UK taxpayers. It includes a front-end search tool and reuseable data pipes to replicate success for other Travelopia brands. The project's strategic visibility at board level led to progress and improvement in identifying certain types of tax fraud hidden in unsstructured data, while other brand signups showed the effectiveness of the placform in the first slice. Illuminate is a risk profiling tool that allows HMRC to bulk-search millions of documents for identification of non-compliance and fraud.",
+      "overall_score": 0.56,
       "scores": {
-        "answer_relevance": 0.67,
-        "faithfulness": 1.0,
-        "answer_correctness": 0.2,
+        "answer_relevance": 1.0,
+        "faithfulness": 0.8,
+        "answer_correctness": 0.8,
         "hallucination_rate": 0.0,
         "context_relevance": 0.2
       },
       "metric_details": {
-        "answer_relevance": "The answer partially addresses the question by mentioning the platform's success, but it does not directly respond to what was asked about the HMRC Illuminate platform",
-        "faithfulness": "The answer is faithful to the context, as it accurately summarizes the success of the digital platform in replicating results across multiple Travelopia brands.",
-        "answer_correctness": "The actual answer lacks the key fact of identifying 'millions of pounds in confirmed tax at risk' and saving 'tens of millions' by stopping fraudulent claims, while conveying similar meaning through worded details",
-        "hallucination_rate": "These specific names, initiatives, and project details are not present in the original context.",
-        "context_relevance": "The retrieved context contains limited information about the HMRC Illuminate platform, making it difficult to answer the question effectively."
+        "answer_relevance": "The answer directly responds to what was asked, provides on-topic information, and meets the question's requirements regarding the results of the HMRC Illuminate platform.",
+        "faithfulness": "The answer introduces some new information not present in the original context, but overall it remains faithful to and grounded in the provided text.",
+        "answer_correctness": "The actual answer closely matches the expected answer semantically, with key facts about Illuminate's functionality, HMRC's benefits, and data search capabilities being present in both answers.",
+        "hallucination_rate": "The provided context does not contain enough information to verify these specific claims, making them hallucinations",
+        "context_relevance": "The retrieved context is not relevant to the question as it does not provide information about the results of the HMRC Illuminate platform."
       }
     },
     {
       "test_id": "tc_006",
       "question": "How did Equal Experts reduce time to market for John Lewis?",
       "expected_answer": "Equal Experts helped John Lewis build a cloud-based digital platform using microservices and a You Build It You Run It model. Deployments increased from 10 per year to 4000 per year and the new search algorithm generated an estimated \u00a330 million in extra revenue.",
-      "actual_answer": "The context provided does not allow the answer to be determined based on the given information. However, based on the available information, it can be inferred that Equal Experts reduced time to market for John Lewis by reducing the range of new services and higher availability, resulting in a faster customer feedback loop. This, in turn, allowed the development teams to start generating revenues sooner and update existing or launch new services more quickly, which increased business agility and allowed customers to experience an improved overall service experience.",
-      "overall_score": 0.64,
+      "actual_answer": "The context provided suggests that the question is related to the You Build It You Run It operating model and the retailer John Lewis & Partners. The You Build It You Run It model aims to accelerate time to market, improve website reliability, and create a learning culture at scale by adopting the Equal Experts' operating model.",
+      "overall_score": 0.5700000000000001,
       "scores": {
-        "answer_relevance": 0.5,
-        "faithfulness": 0.8,
-        "answer_correctness": 0.8,
-        "hallucination_rate": 0.9,
-        "context_relevance": 0.2
+        "answer_relevance": 0.6,
+        "faithfulness": 0.9,
+        "answer_correctness": 0.75,
+        "hallucination_rate": 0.0,
+        "context_relevance": 0.6
       },
       "metric_details": {
-        "answer_relevance": "The answer provides some relevant information but does not directly address the question or provide a clear, concise response",
-        "faithfulness": "The answer introduces minor inaccuracies (e.g., 'John Lewis' instead of 'retail') but overall stays faithful to the context and does not contradict any information presented.",
-        "answer_correctness": "The actual answer conveys the same meaning as the expected answer, with some minor variations in wording, but is missing specific details on 'cloud-based digital platform' and 'microservices model'",
-        "hallucination_rate": "Claims about specific actions taken by Equal Experts on John Lewis' behalf cannot be verified from the provided context",
-        "context_relevance": "The retrieved context does not contain direct information about how Equal Experts reduced time to market for John Lewis, making it difficult to answer the question using only this text."
+        "answer_relevance": "The answer directly refers to the You Build It You Run It model, but does not explicitly state how Equal Experts reduced time to market for John Lewis",
+        "faithfulness": "The answer is faithful to the context, accurately referencing the You Build It You Run It operating model and its benefits, including reduced time to market for new digital services.",
+        "answer_correctness": "The actual answer closely matches the expected answer semantically, conveying the same meaning with key facts such as the You Build It You Run It model, significant deployment increase, and revenue generation, but lacks minor details",
+        "hallucination_rate": "Multiple claims and details, such as specific timeframes (24 months, ab around six months), studies, and statistics (Forrester study), are not supported by the provided context.",
+        "context_relevance": "The retrieved context contains relevant information about the time reduction for digital services, although it does not explicitly mention John Lewis."
       }
     },
     {
       "test_id": "tc_007",
       "question": "What approach did Equal Experts take with the Australian superannuation security architecture client?",
       "expected_answer": "Equal Experts embedded a Security Architecture Consultant who streamlined requirements sharing and introduced a fast-track process for smaller low-risk projects. This reduced security architecture decision time from 12 weeks to 3 weeks.",
-      "actual_answer": "Equally Experts took an \"event-driven\" approach with the Australian superannuaction security architecture client, improving the time to market for security architecture projects by reducing the client's average time required from 12 weeks to just three weeks. This has enabled the client to respond quickly to new regulatory requirements and maintain regulatory compliance, while capitalising on new opportunities to enhance returns for its members.",
-      "overall_score": 0.9400000000000001,
+      "actual_answer": "Equal Experts took a fast-track process for smaller, low-risk projects to improve the time to market for security architecture decisions at the Australian superannuaion fund provider. This enhanced agility enabled them to respond quickly to new regulatory changes and maintain compliance while capitalizing on new opportunities for their members.",
+      "overall_score": 0.6900000000000001,
       "scores": {
         "answer_relevance": 1.0,
         "faithfulness": 1.0,
-        "answer_correctness": 0.9,
-        "hallucination_rate": 0.8,
-        "context_relevance": 1.0
+        "answer_correctness": 0.85,
+        "hallucination_rate": 0.4,
+        "context_relevance": 0.2
       },
       "metric_details": {
-        "answer_relevance": "The answer directly responds to what was asked, is on-topic, and provides the information the question was seeking about Equal Experts' approach with the Australian superannuation security architecture client.",
-        "faithfulness": "The answer is faithful to the context as it directly quotes from the provided text and presents information without introducing new details or contradicting any information in the original content.",
-        "answer_correctness": "The actual answer closely matches the expected answer semantically, with only minor wording variations that do not alter the core meaning.",
-        "hallucination_rate": "The number of workers Spirit Super serves cannot be verified from the context provided.",
-        "context_relevance": "The retrieved context is highly relevant, on-topic, and sufficient to answer the question, as it directly mentions the Australian superannuation fund provider client of Equal Experts."
+        "answer_relevance": "The answer directly responds to the question, provides relevant information about Equal Experts' approach with the Australian superannuation security architecture client, and is on-topic.",
+        "faithfulness": "The answer is faithful to the context, as it accurately references the same project and outcome mentioned in the original text without introducing new information or contradicting existing facts.",
+        "answer_correctness": "The actual answer conveys the same meaning as the expected answer, including key facts about reducing security architecture decision time, but uses slightly different wording and phrasing to describe the context and benefits.",
+        "hallucination_rate": "Several specific claims and details cannot be verified from the original context",
+        "context_relevance": "The retrieved context is partially relevant as it mentions the Australian superannuation fund provider, but it does not provide information on the approach Equal Experts took with this client."
       }
     }
   ]

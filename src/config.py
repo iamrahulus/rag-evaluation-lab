@@ -23,5 +23,8 @@ class Settings(BaseSettings):
     DEFAULT_CHUNK_OVERLAP: int = 50
     DEFAULT_TOP_K: int = 3
 
+    # BM25 model persistence (fitted corpus statistics, saved after ingestion)
+    BM25_MODEL_PATH: str = "./bm25_model.json"
+
 
 settings = Settings()

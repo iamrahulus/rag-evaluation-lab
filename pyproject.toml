@@ -14,8 +14,15 @@ numpy = "^2.1.3"
 typer = "^0.13.1"
 httpx = "^0.27.2"
 pydantic-settings = "^2.6.1"
-pymilvus = "^2.4.9"
+pymilvus = { version = "^2.4.9", extras = ["model", "milvus-lite"] }
 ollama = "^0.6.2"
+milvus-model = "^0.2.12"
+
+# Direct multi-constraint syntax for SciPy based on Python version
+scipy = [
+    { version = "<1.11.0", python = "<3.12" },
+    { version = ">=1.11.0", python = ">=3.12" }
+]
 
 [tool.poetry.group.dev.dependencies]
 black = "^24.1.1"
@@ -50,5 +57,6 @@ namespace_packages = true
 [[tool.mypy.overrides]]
 module = [
     "pymilvus.*",
+    "scipy.*",
 ]
 ignore_missing_imports = true

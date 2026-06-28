@@ -449,3 +449,321 @@ Failed eval jobs dead-lettered and alerted - never silently dropped.
 A complete architecture diagram for a production grade RAG system: 
 
 <img width="5532" height="4302" alt="RAG Prod Grade Pipeline" src="https://github.com/user-attachments/assets/3fc8b0b6-4816-4c98-a880-f16970a40ee0" />
+
+---
+
+## Milvus Store — Implementation Notes and Lessons Learned
+
+This section documents every decision and bug encountered while implementing and upgrading the Milvus vector store layer. It is written as a tutorial so the reasoning behind each change is reproducible.
+
+---
+
+### 1. Adding Sparse BM25 for Hybrid Retrieval
+
+#### Why
+
+Dense vector search (embeddings) finds semantically similar content but misses exact keyword matches. BM25 keyword search finds exact terms but misses paraphrasing. Hybrid retrieval combines both so neither gap exists in isolation.
+
+#### Schema change
+
+A `SPARSE_FLOAT_VECTOR` field was added alongside the existing `FLOAT_VECTOR` embedding field:
+
+```python
+schema.add_field(field_name="embedding", datatype=DataType.FLOAT_VECTOR, dim=dim)  # dense
+schema.add_field(field_name="sparse",    datatype=DataType.SPARSE_FLOAT_VECTOR)     # sparse BM25
+```
+
+The sparse field requires its own index type:
+
+```python
+index_params.add_index(field_name="embedding", index_type="AUTOINDEX",            metric_type="IP")
+index_params.add_index(field_name="sparse",    index_type="SPARSE_INVERTED_INDEX", metric_type="IP")
+```
+
+Both fields use Inner Product (`IP`) as the distance metric, which is correct for normalised dense vectors and for BM25 score accumulation.
+
+#### Schema migration guard
+
+If the collection already existed without the `sparse` field (from a previous run), it is dropped and recreated:
+
+```python
+fields = client.describe_collection(self.collection_name)["fields"]
+has_sparse = any(f["name"] == "sparse" for f in fields)
+if stats["row_count"] > 0 and has_sparse:
+    return          # reuse: data exists and schema is current
+client.drop_collection(...)   # recreate: empty or schema is stale
+```
+
+This means re-ingestion is required whenever the schema changes. That is expected — sparse vectors for existing records would be missing otherwise.
+
+#### Hybrid search at query time
+
+Two `AnnSearchRequest` objects (one dense, one sparse) are combined with Reciprocal Rank Fusion:
+
+```python
+dense_req  = AnnSearchRequest(data=[query_embedding], anns_field="embedding", ...)
+sparse_req = AnnSearchRequest(data=[query_sparse],    anns_field="sparse",    ...)
+
+results = client.hybrid_search(
+    reqs=[dense_req, sparse_req],
+    ranker=RRFRanker(k=60),   # k=60 is the standard RRF damping constant
+    ...
+)
+```
+
+RRF ranks candidates by combining their positions in the two result lists rather than their raw scores, which avoids the problem of dense and sparse scores having incompatible scales.
+
+---
+
+### 2. BM25 Encoder — `pymilvus.model` vs custom implementation
+
+#### What `BM25EmbeddingFunction` returns
+
+`pymilvus.model.sparse.BM25EmbeddingFunction.encode_documents()` returns a `scipy.sparse.csr_array` (not a list, not a `csr_matrix`). The `csr_array` class (introduced in scipy 1.8) dropped the `getrow()` method that existed on the older `csr_matrix`.
+
+Extracting per-row dicts from a `csr_array` must use the underlying CSR storage arrays directly:
+
+```python
+csr = mat.tocsr()
+for i in range(csr.shape[0]):
+    start, end = int(csr.indptr[i]), int(csr.indptr[i + 1])
+    row_dict = {int(c): float(v)
+                for c, v in zip(csr.indices[start:end], csr.data[start:end])}
+```
+
+This works on both `csr_array` and `csr_matrix` because both share the same underlying storage format.
+
+#### Fitting BM25 before encoding
+
+BM25 IDF weights are corpus-global. `fit()` must be called on the **full chunk corpus** before `encode_documents()` or `encode_query()`:
+
+```python
+self.bm25.fit(chunks)                              # build IDF over all chunks
+sparse_vectors = self.bm25.encode_documents(chunks) # encode with global IDF
+```
+
+Fitting on a subset produces biased IDF weights. If documents are ingested in multiple batches, re-fitting on the combined corpus is required.
+
+#### `encode_query` vs `encode_queries`
+
+The `SparseEncoder` ABC exposes both:
+- `encode_queries(texts: list[str]) -> list[dict]` — abstract, batch form
+- `encode_query(text: str) -> dict` — concrete default, delegates to `encode_queries([text])[0]`
+
+This keeps the pipeline call site simple (`encode_query(question)`) while the abstract contract only requires implementing the batch form.
+
+---
+
+### 3. pymilvus 2.4 → 2.6 and milvus_lite 2.4 → 3.0 upgrade
+
+#### Storage format change: file → directory
+
+milvus_lite 2.4.x stored everything in a single SQLite file (e.g. `./milvus.db`).  
+milvus_lite 3.0 treats that path as a **directory** and calls `os.makedirs()` on it.
+
+If the old flat file still exists, `os.makedirs` raises `FileExistsError` because a file is in the way of the directory it wants to create.
+
+**Fix:** delete the old flat file. milvus_lite 3.0 will create a directory at the same path containing its own internal data files. The URI format still requires a `.db` suffix — pymilvus validates this before handing the path to milvus_lite.
+
+```
+# Before (milvus_lite 2.4.x) — a file:
+./milvus.db   (192 KB SQLite file)
+
+# After (milvus_lite 3.0) — a directory:
+./milvus.db/
+  ├── meta.db
+  └── ...
+```
+
+The config path `./milvus.db` is unchanged; only the on-disk representation changed.
+
+#### ORM API deprecation
+
+pymilvus 2.6 deprecates the ORM-style API (`connections`, `Collection`, `utility`) in favour of `MilvusClient`. The ORM API will be removed in pymilvus 3.1.
+
+| ORM API (deprecated) | MilvusClient API |
+|---|---|
+| `connections.connect(uri=...)` | `MilvusClient(uri=...)` |
+| `utility.has_collection(name)` | `client.has_collection(name)` |
+| `Collection(name).drop()` | `client.drop_collection(name)` |
+| `Collection(name).insert(entities)` | `client.insert(collection_name, data)` |
+| `Collection(name).search(...)` | `client.search(collection_name, ...)` |
+| `Collection(name).hybrid_search(...)` | `client.hybrid_search(collection_name, ...)` |
+| `hit.entity.get("text")` / `hit.score` | `hit["entity"]["text"]` / `hit["distance"]` |
+
+The schema creation API also changed:
+
+```python
+# MilvusClient schema builder
+schema = MilvusClient.create_schema(auto_id=True, enable_dynamic_field=False)
+schema.add_field(field_name="id",        datatype=DataType.INT64, is_primary=True)
+schema.add_field(field_name="text",      datatype=DataType.VARCHAR, max_length=65535)
+schema.add_field(field_name="embedding", datatype=DataType.FLOAT_VECTOR, dim=768)
+schema.add_field(field_name="sparse",    datatype=DataType.SPARSE_FLOAT_VECTOR)
+
+index_params = MilvusClient.prepare_index_params()
+index_params.add_index(field_name="embedding", index_type="AUTOINDEX",            metric_type="IP")
+index_params.add_index(field_name="sparse",    index_type="SPARSE_INVERTED_INDEX", metric_type="IP")
+
+client.create_collection(collection_name=..., schema=schema, index_params=index_params)
+```
+
+---
+
+### 4. gRPC GOAWAY — root cause and fix
+
+#### Symptom
+
+```
+Got goaway [11] err=UNAVAILABLE: too_many_pings
+Received GOAWAY with error code ENHANCE_YOUR_CALM
+Current keepalive time (before throttling): 10000ms
+```
+
+Followed — minutes later — by:
+
+```
+DescribeCollectionException: collection 'documents' does not exist
+```
+
+The "collection does not exist" error was **not** a missing collection. The collection was created and persisted to disk. The error was pymilvus's interpretation of a failed gRPC call on a dead channel.
+
+#### Root cause
+
+pymilvus's `GrpcHandler` hardcodes these gRPC channel options:
+
+```python
+"grpc.keepalive_time_ms": 10000,              # ping every 10 seconds
+"grpc.keepalive_permit_without_calls": True,   # ← ping even when idle
+```
+
+`keepalive_permit_without_calls: True` means the gRPC client sends a keepalive ping every 10 seconds **regardless of whether any RPC is in flight**. During the ~10 minutes spent generating 1,405 embeddings via Ollama (with zero Milvus calls happening), the client sent ~60 idle pings. milvus_lite's embedded gRPC server responded with `ENHANCE_YOUR_CALM` (HTTP/2 error code 11), closing the channel.
+
+#### Why reconnecting did not help
+
+`connections.connect()` (ORM API) reuses an existing connection alias and does not rebuild the underlying gRPC channel if one already exists for that alias.
+
+`MilvusClient` pools connections by `address|token` key. Creating a new `MilvusClient` pointing to the same URI returns the same pooled handler with the same dead channel.
+
+#### Fix
+
+`grpc_options` passed to `MilvusClient` are merged over the defaults in `GrpcHandler._setup_grpc_channel`:
+
+```python
+self._client = MilvusClient(
+    uri=settings.MILVUS_DB_PATH,
+    grpc_options={"grpc.keepalive_permit_without_calls": False},
+)
+```
+
+Setting `keepalive_permit_without_calls` to `False` stops idle pings entirely. Keepalive pings are only sent while a Milvus RPC is actively in progress — which is never the case during embedding generation. The GOAWAY no longer occurs.
+
+---
+
+### 5. Lazy client initialisation
+
+The `MilvusClient` is not created at `MilvusStore.__init__` time. It is created on first use via `_get_client()`:
+
+```python
+def _get_client(self) -> MilvusClient:
+    if self._client is None:
+        self._client = MilvusClient(uri=..., grpc_options=...)
+    return self._client
+```
+
+**Why:** constructing `MilvusStore` starts a milvus_lite gRPC server in a background thread. If the client were created eagerly at construction time but the first actual Milvus operation happened 10 minutes later, the connection window would be unnecessarily long. Lazy initialisation means the connection is opened at the point of first use, not at object construction.
+
+---
+
+### 6. Batched insertion
+
+1,405 entities inserted as a single payload stressed the gRPC message size. Insertion is batched in groups of 200:
+
+```python
+for start in range(0, len(entities), batch_size):
+    batch = entities[start : start + batch_size]
+    client.insert(collection_name=self.collection_name, data=batch)
+```
+
+`batch_size=200` is a parameter on `insert_embeddings`, tunable if the chunk count changes significantly.
+
+---
+
+### 7. Collection lifecycle — `--clean` flag drops collection after `__init__`
+
+#### Symptom
+
+```
+milvus_exceptions.MilvusException: collection 'documents' does not exist
+```
+
+This error appeared at `insert_embeddings` time, without any preceding GOAWAY — the gRPC channel was healthy, and the collection genuinely was not there.
+
+#### Root cause
+
+`main.py` calls `drop_collection()` only when `--clean` is passed. The sequence is:
+
+```
+RAGPipeline.__init__()        # → create_collection() — collection created here
+    ...
+if args.clean:
+    vector_store.drop_collection()  # collection dropped HERE
+if vector_store.is_empty():
+    pipeline.add_documents(...)     # → insert_embeddings() — collection is gone
+```
+
+`__init__` creates the collection eagerly. `--clean` drops it afterwards. Nothing recreates it before `insert_embeddings` runs.
+
+#### Fix
+
+`insert_embeddings` calls `create_collection` at its own start, before any insert:
+
+```python
+def insert_embeddings(self, embeddings, texts, sparse_vectors=None, batch_size=200):
+    # Re-create if dropped (e.g. --clean) or lost between init and insert.
+    self.create_collection(dim=len(embeddings[0]))
+    ...
+```
+
+`create_collection` is idempotent — it returns early if the collection already exists with data and the correct schema. On the happy path this costs one `has_collection` RPC. On the `--clean` path it recreates the collection. Both paths succeed.
+
+This also covers less common scenarios: milvus_lite server restart between `__init__` and the first insert, or a schema migration that dropped an empty collection.
+
+---
+
+### 8. Collection load state — `--eval` without re-ingestion
+
+#### Background
+
+Milvus separates **storage** from **memory**. After a collection is created and data is inserted, it may not be in the `Loaded` state (i.e. mapped into memory for search). The `Loaded` state is required for both `search` and `hybrid_search`.
+
+During a normal ingestion run this is usually not visible — milvus_lite auto-loads after a fresh `create_collection`. But when running with `--eval` against an already-populated store (no ingestion step), the collection may be in `NotLoad` or `Loading` state from a previous session.
+
+#### Load states
+
+`LoadState` is an enum in `pymilvus.client.types`:
+
+| State | Meaning |
+|---|---|
+| `NotLoad` (1) | Collection exists on disk but is not in memory |
+| `Loading` (2) | Collection is currently being loaded into memory |
+| `Loaded` (3) | Collection is in memory — ready for search |
+
+#### Fix
+
+`_ensure_collection_loaded()` is called inside `retrieve()` and `hybrid_retrieve()`, the two methods that require the collection to be in memory:
+
+```python
+def _ensure_collection_loaded(self) -> None:
+    client = self._get_client()
+    if not client.has_collection(self.collection_name):
+        return  # not yet created — ingestion handles creation
+    state = client.get_load_state(collection_name=self.collection_name)["state"]
+    if state != LoadState.Loaded:
+        client.load_collection(self.collection_name)
+```
+
+`load_collection` is a no-op if the collection is already `Loaded`, and blocks until loading is complete if it is in `NotLoad` or `Loading`. One call handles all three cases.
+
+**Why not call this from `_get_client()`?**  
+`_get_client()` is called by every method — `is_empty`, `drop_collection`, `create_collection`, `insert_embeddings`. None of those require the collection to be in memory. Checking load state on every call adds 2 unnecessary RPCs (one `has_collection`, one `get_load_state`) to every non-search operation, including `drop_collection` which would load a collection just to immediately drop it. Placing the check only in the two search methods keeps the overhead where it is needed.

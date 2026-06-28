@@ -6,13 +6,14 @@ from src.config import settings
 from src.llm.ollama import OllamaLLM
 from src.rag.pipeline import RAGPipeline
 from src.vectorstore.milvus_store import MilvusStore
-from pymilvus import connections
+from src.vectorstore.bm25_encoder import MilvusBM25Encoder
 
 import argparse
 
 parser = argparse.ArgumentParser(description="Run the RAG pipeline")
 parser.add_argument("--eval", action= "store_true", default=False, help="Run evaluation after ingestion")
 parser.add_argument("--parallel", action= "store_true", default=False, help="Run evaluation in parallel mode (only applicable if --eval is set)")
+parser.add_argument("--clean", action= "store_true", default=False, help="Clean the vector store before ingestion")
 #Another can be added for selecting chunking strategy if needed, e.g. --chunker simple|advanced
 args = parser.parse_args()
 def main() -> None:
@@ -21,8 +22,8 @@ def main() -> None:
     # chunker = AdvancedChunker()
     chunker = SimpleChunker()
     vector_store = MilvusStore()
-
-    pipeline = RAGPipeline(llm=llm, chunker=chunker, vector_store=vector_store)
+    sparse_encoder = MilvusBM25Encoder() #BM25 encoder can be added here when available
+    pipeline = RAGPipeline(llm=llm, chunker=chunker, vector_store=vector_store, sparse_encoder=sparse_encoder) #Sparse encoder can be added here when available
 
     try:
         with open(settings.CASE_STUDIES_PATH, "r", encoding="utf-8") as f:
@@ -30,6 +31,8 @@ def main() -> None:
             documents: List[str] = [study["content"] for study in case_studies]
 
         print(f"Processing {len(documents)} documents...")
+        if args.clean:
+            vector_store.drop_collection()
         if vector_store.is_empty():
             pipeline.add_documents(documents)
         else:
@@ -61,7 +64,7 @@ def main() -> None:
         print(f"Error: {str(e)}")
     finally:
         llm.close()
-        connections.disconnect("default")  # explicit Milvus cleanup before shutdown
+        vector_store.close()
 
 if __name__ == "__main__":
     main()
