@@ -751,7 +751,7 @@ During a normal ingestion run this is usually not visible — milvus_lite auto-l
 
 #### Fix
 
-`_ensure_collection_loaded()` is called inside `retrieve()` and `hybrid_retrieve()`, the two methods that require the collection to be in memory:
+`_ensure_collection_loaded()` is called at the top of `search()`, the single method that requires the collection to be in memory:
 
 ```python
 def _ensure_collection_loaded(self) -> None:
@@ -766,4 +766,116 @@ def _ensure_collection_loaded(self) -> None:
 `load_collection` is a no-op if the collection is already `Loaded`, and blocks until loading is complete if it is in `NotLoad` or `Loading`. One call handles all three cases.
 
 **Why not call this from `_get_client()`?**  
-`_get_client()` is called by every method — `is_empty`, `drop_collection`, `create_collection`, `insert_embeddings`. None of those require the collection to be in memory. Checking load state on every call adds 2 unnecessary RPCs (one `has_collection`, one `get_load_state`) to every non-search operation, including `drop_collection` which would load a collection just to immediately drop it. Placing the check only in the two search methods keeps the overhead where it is needed.
+`_get_client()` is called by every method — `is_empty`, `drop_collection`, `create_collection`, `upsert`. None of those require the collection to be in memory. Checking load state on every call adds 2 unnecessary RPCs (one `has_collection`, one `get_load_state`) to every non-search operation, including `drop_collection` which would load a collection just to immediately drop it. Placing the check only in `search()` keeps the overhead where it is needed.
+
+---
+
+### 9. BM25 model persistence across sessions
+
+#### Problem
+
+The BM25 encoder is fitted on the full chunk corpus during ingestion (`bm25.fit(chunks)`). The fitted model — IDF weights, corpus statistics — lives only in memory. When the process exits, it is lost.
+
+On the next run with `--eval` or a standalone query (no ingestion), `bm25.is_fitted` is `False` and the pipeline silently falls back to dense-only retrieval. The sparse vectors in Milvus are never used.
+
+#### Fix
+
+After fitting, the model is saved to disk; on startup it is restored if the file exists:
+
+```python
+# add_documents — after fit():
+self.bm25.save(settings.BM25_MODEL_PATH)   # serialises IDF stats to JSON
+
+# __init__ — before any retrieval:
+if self.bm25 is not None and os.path.exists(settings.BM25_MODEL_PATH):
+    self.bm25.load(settings.BM25_MODEL_PATH)
+```
+
+`BM25EmbeddingFunction.save()` writes a JSON file containing `corpus_size`, `avgdl`, and the full `idf` table. `load()` restores it and sets `is_fitted = True`.
+
+The `--clean` path re-fits on fresh data and overwrites the file, keeping the saved model consistent with the sparse vectors in Milvus.
+
+`BM25_MODEL_PATH` is configurable via `settings` alongside other store paths.
+
+---
+
+### 10. `VectorStore` ABC — store-agnostic interface
+
+#### Why
+
+`RAGPipeline` originally imported `MilvusStore` directly, making it impossible to swap in Elasticsearch, Azure AI Search, Pinecone, or any other store without changing the pipeline.
+
+#### Interface design
+
+The two key design decisions:
+
+**Single `search` method with a `mode` parameter** — not separate `retrieve` / `hybrid_retrieve` methods. Elasticsearch and Azure AI Search perform hybrid retrieval in a single server-side request; forcing them into a two-method split would require them to fake a separation that doesn't exist in the underlying API.
+
+**Two optional query parameters** — `query_text` and `query_sparse` — rather than one:
+
+| Parameter | Used by |
+|---|---|
+| `query_text` | Stores with native BM25 (Elasticsearch, Azure AI Search) — raw text passed to the store, BM25 handled server-side |
+| `query_sparse` | Stores needing pre-computed sparse vectors (Milvus, Pinecone) — pipeline encodes with `SparseEncoder` and passes the result |
+
+```python
+class VectorStore(ABC):
+
+    @abstractmethod
+    def upsert(
+        self,
+        texts: List[str],
+        embeddings: List[List[float]],
+        sparse_vectors: Optional[List[Dict[int, float]]] = None,
+        metadata: Optional[List[Dict]] = None,
+    ) -> None: ...
+
+    @abstractmethod
+    def search(
+        self,
+        query_embedding: List[float],
+        limit: int,
+        query_text: Optional[str] = None,
+        query_sparse: Optional[Dict[int, float]] = None,
+        mode: str = "hybrid",          # "dense" | "sparse" | "hybrid"
+    ) -> List[Dict]: ...
+
+    @abstractmethod
+    def is_empty(self) -> bool: ...
+
+    @abstractmethod
+    def drop_collection(self) -> None: ...
+
+    def create_collection(self, dim: int, **kwargs) -> None: pass  # no-op for serverless
+    def close(self) -> None: pass
+```
+
+`create_collection` is a concrete no-op default — serverless stores (Pinecone Serverless) have no collection lifecycle concept and should not be forced to implement it.
+
+#### Effect on the pipeline
+
+`RAGPipeline` now imports `VectorStore` instead of `MilvusStore`. The `retrieve()` method collapses to a single `search()` call:
+
+```python
+query_sparse = self.bm25.encode_query(question) if (self.bm25 is not None and self.bm25.is_fitted) else None
+results = self.vector_store.search(
+    query_embedding=question_embedding,
+    query_text=question,
+    query_sparse=query_sparse,
+    limit=top_k,
+    mode="hybrid" if query_sparse is not None else "dense",
+)
+```
+
+The pipeline passes both `query_text` (for native-BM25 stores) and `query_sparse` (for Milvus/Pinecone). Each store implementation uses whichever is relevant and ignores the other.
+
+#### Store comparison
+
+| Store | `upsert` sparse_vectors | `search` uses | SparseEncoder in pipeline? |
+|---|---|---|---|
+| Milvus | Required — stored as field | `query_sparse` via `hybrid_search` + RRF | Yes |
+| Elasticsearch | Ignored — BM25 native | `query_text` via single `knn`+`query` request | No |
+| Azure AI Search | Ignored — BM25 native | `query_text` via hybrid query API | No |
+| Pinecone | Required — stored as sparse index | `query_sparse` via single hybrid request | Yes |
+| pgvector | Ignored — no sparse support | `query_embedding` only, mode forced to `"dense"` | No |
+| Chroma | Ignored | `query_embedding` only, mode forced to `"dense"` | No |

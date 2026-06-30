@@ -30,25 +30,46 @@ def test_milvus_store_create_collection(mock_client):
     mock_client.create_collection.assert_called_once()
 
 
-def test_milvus_store_insert_embeddings(mock_client):
+def test_milvus_store_upsert(mock_client):
     store = MilvusStore()
 
     embeddings = [[1.0, 2.0], [3.0, 4.0]]
     texts = ["text1", "text2"]
 
-    store.insert_embeddings(embeddings, texts)
+    store.upsert(texts=texts, embeddings=embeddings)
 
     mock_client.insert.assert_called_once()
 
 
-def test_milvus_store_retrieve(mock_client):
+def test_milvus_store_upsert_with_sparse(mock_client):
+    store = MilvusStore()
+
+    embeddings = [[1.0, 2.0], [3.0, 4.0]]
+    texts = ["text1", "text2"]
+    sparse = [{0: 0.5, 1: 0.3}, {2: 0.8}]
+
+    store.upsert(texts=texts, embeddings=embeddings, sparse_vectors=sparse)
+
+    call_data = mock_client.insert.call_args[1]["data"]
+    assert call_data[0]["sparse"] == sparse[0]
+    assert call_data[1]["sparse"] == sparse[1]
+
+
+def test_milvus_store_upsert_validation(mock_client):
+    store = MilvusStore()
+
+    with pytest.raises(ValueError, match="Number of embeddings and texts must match"):
+        store.upsert(texts=["text1", "text2"], embeddings=[[1.0, 2.0]])
+
+
+def test_milvus_store_search_dense(mock_client):
     store = MilvusStore()
 
     mock_client.search.return_value = [[
         {"entity": {"text": "test text"}, "distance": 0.95}
     ]]
 
-    results = store.retrieve([1.0, 2.0], limit=1)
+    results = store.search([1.0, 2.0], limit=1, mode="dense")
 
     assert len(results) == 1
     assert results[0]["text"] == "test text"
@@ -56,8 +77,32 @@ def test_milvus_store_retrieve(mock_client):
     mock_client.search.assert_called_once()
 
 
-def test_milvus_store_insert_embeddings_validation(mock_client):
+def test_milvus_store_search_hybrid(mock_client):
     store = MilvusStore()
 
-    with pytest.raises(ValueError, match="Number of embeddings and texts must match"):
-        store.insert_embeddings([[1.0, 2.0]], ["text1", "text2"])
+    mock_client.hybrid_search.return_value = [[
+        {"entity": {"text": "hybrid result"}, "distance": 0.88}
+    ]]
+
+    results = store.search(
+        [1.0, 2.0], limit=1,
+        query_sparse={0: 0.5, 3: 0.2},
+        mode="hybrid",
+    )
+
+    assert results[0]["text"] == "hybrid result"
+    mock_client.hybrid_search.assert_called_once()
+
+
+def test_milvus_store_search_hybrid_falls_back_to_dense_without_sparse(mock_client):
+    """When mode=hybrid but no query_sparse provided, falls back to dense rather than raising."""
+    store = MilvusStore()
+
+    mock_client.search.return_value = [[
+        {"entity": {"text": "dense fallback"}, "distance": 0.75}
+    ]]
+
+    results = store.search([1.0, 2.0], limit=1, mode="hybrid")
+
+    assert results[0]["text"] == "dense fallback"
+    mock_client.hybrid_search.assert_not_called()

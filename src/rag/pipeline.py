@@ -4,12 +4,12 @@ from typing import List, Optional
 from src.chunking.chunking_strategies import BaseChunker
 from src.config import settings
 from src.llm.base import BaseLLM
-from src.vectorstore.milvus_store import MilvusStore
 from src.vectorstore.sparse_encoder import SparseEncoder
+from src.vectorstore.vector_store import VectorStore
 
 
 class RAGPipeline:
-    def __init__(self, llm: BaseLLM, chunker: BaseChunker, vector_store: MilvusStore, sparse_encoder: Optional[SparseEncoder] = None) -> None:
+    def __init__(self, llm: BaseLLM, chunker: BaseChunker, vector_store: VectorStore, sparse_encoder: Optional[SparseEncoder] = None) -> None:
         self.llm = llm
         self.chunker = chunker
         self.vector_store = vector_store
@@ -43,7 +43,7 @@ class RAGPipeline:
             print("No BM25 encoder provided, skipping sparse vector generation.")
             sparse_vectors = None
         print("Inserting embeddings into vector store...")
-        self.vector_store.insert_embeddings(
+        self.vector_store.upsert(
             embeddings=embeddings,
             texts=chunks,
             sparse_vectors=sparse_vectors, #None check is done in insert_embeddings
@@ -53,19 +53,14 @@ class RAGPipeline:
         """Retrieve relevant context using hybrid search when BM25 is available."""
         print(f"Retrieving context for question: {question}")
         question_embedding = self.llm.get_embeddings(question)
-        if self.bm25 is not None and self.bm25.is_fitted:
-            query_sparse = self.bm25.encode_query(question)
-            results = self.vector_store.hybrid_retrieve(
-                query_embedding=question_embedding,
-                query_sparse=query_sparse,
-                limit=top_k,
-            )
-        else:
-            results = self.vector_store.retrieve(
-                query_embedding=question_embedding,
-                limit=top_k,
-            )
-
+        query_sparse = self.bm25.encode_query(question) if (self.bm25 is not None and self.bm25.is_fitted) else None
+        results = self.vector_store.search(
+            query_embedding=question_embedding,
+            query_text=question,
+            query_sparse=query_sparse,
+            limit=top_k,
+            mode="hybrid" if query_sparse is not None else "dense",
+        )
         return "\n\n".join(str(hit["text"]) for hit in results)
 
     def query(

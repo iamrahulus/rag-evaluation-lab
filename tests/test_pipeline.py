@@ -14,7 +14,7 @@ def mock_components():
     # Setup mock returns
     llm.get_embeddings.return_value = [0.1, 0.2, 0.3]
     llm.generate.return_value = "test answer"
-    vector_store.retrieve.return_value = [
+    vector_store.search.return_value = [
         {"text": "relevant text 1", "score": 0.9},
         {"text": "relevant text 2", "score": 0.8},
     ]
@@ -32,7 +32,7 @@ def test_pipeline_query(mock_components):
     result = pipeline.query("test question")
 
     mock_components["llm"].get_embeddings.assert_called_once_with("test question")
-    mock_components["vector_store"].retrieve.assert_called_once()
+    mock_components["vector_store"].search.assert_called_once()
     mock_components["llm"].generate.assert_called_once()
     assert result == "test answer"
 
